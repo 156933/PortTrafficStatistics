@@ -1,0 +1,1 @@
+function o(t){if(t===0)return"0 B";const r=["B","KB","MB","GB","TB"];let e=0,n=t;for(;n>=1024&&e<r.length-1;)n/=1024,e++;return`${n.toFixed(2)} ${r[e]}`}function i(t){return new Date(t).toLocaleString("zh-CN")}function u(t){return Math.round(t*1024*1024*1024)}function a(t){return Number((t/(1024*1024*1024)).toFixed(2))}export{i as a,a as b,o as f,u as g};

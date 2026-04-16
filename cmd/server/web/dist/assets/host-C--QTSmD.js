@@ -1,0 +1,1 @@
+import{q as s}from"./index-LAepXqtP.js";function o(){return s.get("/admin/hosts")}function n(t){return s.post("/admin/hosts",t)}function r(t){return s.delete(`/admin/hosts/${t}`)}export{n as c,r as d,o as l};

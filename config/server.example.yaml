@@ -1,0 +1,8 @@
+listen: ":8080"
+db_path: "./traffic.db"
+jwt_secret: "change-me-to-random-string"
+site_title: "HK-01 流量监控"
+
+init_admin:
+  username: "admin"
+  password: "admin123"
