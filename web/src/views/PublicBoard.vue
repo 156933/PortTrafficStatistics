@@ -111,17 +111,18 @@ const trendChartOption = computed(() => {
 
 async function fetchBoard() {
   try {
-    const [boardRes, statsRes] = await Promise.all([
-      getPublicBoard(),
-      getPublicDailyStats(),
-    ])
+    const boardRes = await getPublicBoard()
     users.value = boardRes.data.users || []
-    dailyStats.value = statsRes.data.daily || []
   } catch (e) {
     console.error(e)
-  } finally {
-    loading.value = false
   }
+  try {
+    const statsRes = await getPublicDailyStats()
+    dailyStats.value = statsRes.data.daily || []
+  } catch (e) {
+    // daily-stats endpoint may not be deployed yet
+  }
+  loading.value = false
 }
 
 async function showDetail(user: BoardUser) {
