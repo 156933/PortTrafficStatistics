@@ -1,0 +1,8 @@
+listen: ":7878"
+db_path: "./traffic.db"
+jwt_secret: "change-me-to-random-string"
+site_title: "流量监控"
+
+init_admin:
+  username: "admin"
+  password: "change-me"

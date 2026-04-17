@@ -1,0 +1,12 @@
+server_url: "http://your-server:8080"
+host_id: "hk-node-01"
+api_token: "从管理后台创建母机后获取"
+interval_seconds: 60
+mock_mode: false
+mock_users:
+  - user_id: "user01"
+    port_start: 10001
+    port_end: 10020
+  - user_id: "user02"
+    port_start: 10021
+    port_end: 10040

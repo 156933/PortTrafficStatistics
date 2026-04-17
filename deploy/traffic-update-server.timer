@@ -1,0 +1,10 @@
+[Unit]
+Description=Run server auto-update every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Unit=traffic-update-server.service
+
+[Install]
+WantedBy=timers.target
