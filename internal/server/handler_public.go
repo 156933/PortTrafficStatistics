@@ -18,6 +18,17 @@ func (s *Server) handlePublicBoard(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) handlePublicDailyStats(w http.ResponseWriter, r *http.Request) {
+	daily, err := s.store.GetPublicDailyStats()
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "fetch daily stats failed")
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"daily": daily,
+	})
+}
+
 func (s *Server) handlePublicUserDaily(w http.ResponseWriter, r *http.Request) {
 	userID := r.PathValue("user_id")
 	if userID == "" {

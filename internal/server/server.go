@@ -38,6 +38,7 @@ func (s *Server) setupRoutes(staticFS fs.FS) {
 
 	// Public
 	s.mux.HandleFunc("GET /api/v1/public/board", s.handlePublicBoard)
+	s.mux.HandleFunc("GET /api/v1/public/daily-stats", s.handlePublicDailyStats)
 	s.mux.HandleFunc("GET /api/v1/public/user/{user_id}/daily", s.handlePublicUserDaily)
 
 	// Auth

@@ -29,7 +29,7 @@ const option = computed(() => ({
     },
   },
   legend: {
-    data: ['Download', 'Upload'],
+    data: ['下载', '上传'],
     icon: 'roundRect',
     itemWidth: 12,
     itemHeight: 4,
@@ -52,7 +52,7 @@ const option = computed(() => ({
   },
   series: [
     {
-      name: 'Download',
+      name: '下载',
       type: props.type || 'line',
       data: props.data.map((d) => d.rx_bytes),
       smooth: true,
@@ -70,7 +70,7 @@ const option = computed(() => ({
       } : undefined,
     },
     {
-      name: 'Upload',
+      name: '上传',
       type: props.type || 'line',
       data: props.data.map((d) => d.tx_bytes),
       smooth: true,

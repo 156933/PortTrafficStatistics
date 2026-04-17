@@ -11,13 +11,13 @@
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/>
             </svg>
           </div>
-          <span class="logo-text">Traffic Monitor</span>
+          <span class="logo-text">流量监控</span>
         </div>
         <router-link to="/login" class="admin-link">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="margin-right: 6px;">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="currentColor"/>
           </svg>
-          Admin
+          管理后台
         </router-link>
       </div>
     </header>

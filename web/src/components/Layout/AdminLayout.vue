@@ -69,7 +69,7 @@ function handleLogout() {
           </svg>
         </div>
         <transition name="fade">
-          <span v-if="!collapsed" class="sider-logo-text">Traffic Monitor</span>
+          <span v-if="!collapsed" class="sider-logo-text">流量监控</span>
         </transition>
       </div>
 
@@ -90,14 +90,14 @@ function handleLogout() {
           <transition name="fade">
             <div v-if="!collapsed" class="user-detail">
               <span class="user-name">{{ auth.username }}</span>
-              <span class="user-role">Administrator</span>
+              <span class="user-role">管理员</span>
             </div>
           </transition>
         </div>
-        <div class="logout-btn" @click="handleLogout" :title="collapsed ? '登出' : ''">
+        <div class="logout-btn" @click="handleLogout" :title="collapsed ? '退出登录' : ''">
           <n-icon :size="18"><log-out-outline /></n-icon>
           <transition name="fade">
-            <span v-if="!collapsed" style="margin-left: 8px;">登出</span>
+            <span v-if="!collapsed" style="margin-left: 8px;">退出登录</span>
           </transition>
         </div>
       </div>

@@ -906,6 +906,35 @@ func (s *Store) ExportTrafficCSV(start, end string) ([][]string, error) {
 	return result, rows.Err()
 }
 
+// Public aggregate daily traffic (all users combined, last 30 days)
+
+func (s *Store) GetPublicDailyStats() ([]model.DailyTraffic, error) {
+	thirtyDaysAgo := time.Now().UTC().AddDate(0, 0, -30).Format("2006-01-02")
+	rows, err := s.db.Query(
+		`SELECT DATE(recorded_at) as date, SUM(rx_bytes), SUM(tx_bytes)
+		 FROM traffic_logs
+		 WHERE recorded_at >= ?
+		 GROUP BY DATE(recorded_at)
+		 ORDER BY date`,
+		thirtyDaysAgo,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var daily []model.DailyTraffic
+	for rows.Next() {
+		var d model.DailyTraffic
+		if err := rows.Scan(&d.Date, &d.RxBytes, &d.TxBytes); err != nil {
+			return nil, err
+		}
+		d.TotalBytes = d.RxBytes + d.TxBytes
+		daily = append(daily, d)
+	}
+	return daily, rows.Err()
+}
+
 // Helpers
 
 func FormatBytes(b int64) string {

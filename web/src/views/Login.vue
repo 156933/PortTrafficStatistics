@@ -17,16 +17,16 @@ if (auth.isLoggedIn) {
 
 async function handleLogin() {
   if (!username.value || !password.value) {
-    message.warning('Please enter username and password')
+    message.warning('请输入用户名和密码')
     return
   }
   loading.value = true
   try {
     await auth.login(username.value, password.value)
-    message.success('Login successful')
+    message.success('登录成功')
     router.push('/admin/dashboard')
   } catch (e: any) {
-    message.error(e.response?.data?.error || 'Login failed')
+    message.error(e.response?.data?.error || '登录失败')
   } finally {
     loading.value = false
   }
@@ -47,40 +47,22 @@ async function handleLogin() {
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/>
           </svg>
         </div>
-        <h1 class="login-title">Traffic Monitor</h1>
-        <p class="login-subtitle">Sign in to admin panel</p>
+        <h1 class="login-title">流量监控</h1>
+        <p class="login-subtitle">管理员登录</p>
       </div>
       <n-form @submit.prevent="handleLogin">
-        <n-form-item label="Username" :show-feedback="false" style="margin-bottom: 20px;">
-          <n-input
-            v-model:value="username"
-            placeholder="Enter username"
-            size="large"
-          />
+        <n-form-item label="用户名" :show-feedback="false" style="margin-bottom: 20px;">
+          <n-input v-model:value="username" placeholder="请输入用户名" size="large" />
         </n-form-item>
-        <n-form-item label="Password" :show-feedback="false" style="margin-bottom: 28px;">
-          <n-input
-            v-model:value="password"
-            type="password"
-            placeholder="Enter password"
-            show-password-on="click"
-            size="large"
-            @keydown.enter="handleLogin"
-          />
+        <n-form-item label="密码" :show-feedback="false" style="margin-bottom: 28px;">
+          <n-input v-model:value="password" type="password" placeholder="请输入密码" show-password-on="click" size="large" @keydown.enter="handleLogin" />
         </n-form-item>
-        <n-button
-          type="primary"
-          block
-          size="large"
-          :loading="loading"
-          @click="handleLogin"
-          style="font-weight: 600;"
-        >
-          Sign In
+        <n-button type="primary" block size="large" :loading="loading" @click="handleLogin" style="font-weight: 600;">
+          登 录
         </n-button>
       </n-form>
       <div class="login-footer">
-        <router-link to="/" class="back-link">Back to Public Board</router-link>
+        <router-link to="/" class="back-link">返回公开看板</router-link>
       </div>
     </div>
   </div>
@@ -110,30 +92,9 @@ async function handleLogin() {
   opacity: 0.3;
 }
 
-.shape-1 {
-  width: 400px;
-  height: 400px;
-  background: #6366f1;
-  top: -100px;
-  right: -100px;
-}
-
-.shape-2 {
-  width: 300px;
-  height: 300px;
-  background: #8b5cf6;
-  bottom: -50px;
-  left: -50px;
-}
-
-.shape-3 {
-  width: 200px;
-  height: 200px;
-  background: #06b6d4;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
+.shape-1 { width: 400px; height: 400px; background: #6366f1; top: -100px; right: -100px; }
+.shape-2 { width: 300px; height: 300px; background: #8b5cf6; bottom: -50px; left: -50px; }
+.shape-3 { width: 200px; height: 200px; background: #06b6d4; top: 50%; left: 50%; transform: translate(-50%, -50%); }
 
 .login-card {
   width: 420px;
@@ -146,50 +107,18 @@ async function handleLogin() {
   z-index: 1;
 }
 
-.login-header {
-  text-align: center;
-  margin-bottom: 36px;
-}
+.login-header { text-align: center; margin-bottom: 36px; }
 
 .login-logo {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
+  width: 56px; height: 56px; border-radius: 16px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: white; display: flex; align-items: center; justify-content: center;
   margin: 0 auto 16px;
 }
 
-.login-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0 0 4px;
-  letter-spacing: -0.02em;
-}
-
-.login-subtitle {
-  font-size: 14px;
-  color: #94a3b8;
-  margin: 0;
-}
-
-.login-footer {
-  text-align: center;
-  margin-top: 24px;
-}
-
-.back-link {
-  font-size: 13px;
-  color: #94a3b8;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.back-link:hover {
-  color: #6366f1;
-}
+.login-title { font-size: 24px; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
+.login-subtitle { font-size: 14px; color: #94a3b8; margin: 0; }
+.login-footer { text-align: center; margin-top: 24px; }
+.back-link { font-size: 13px; color: #94a3b8; text-decoration: none; transition: color 0.2s; }
+.back-link:hover { color: #6366f1; }
 </style>
