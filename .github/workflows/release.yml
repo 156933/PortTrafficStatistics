@@ -51,6 +51,8 @@ jobs:
         with:
           name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/*
+          # dsad
+
 
   release:
     needs: build
