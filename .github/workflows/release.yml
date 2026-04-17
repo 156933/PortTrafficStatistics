@@ -35,11 +35,6 @@ jobs:
           npm ci
           npm run build
 
-      - name: Prepare embed dir
-        run: |
-          mkdir -p cmd/server/web
-          cp -r web/dist cmd/server/web/dist
-
       - name: Build binaries
         env:
           GOOS: ${{ matrix.goos }}
