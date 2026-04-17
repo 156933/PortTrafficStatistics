@@ -44,7 +44,9 @@ func NewIptablesCollector() *IptablesCollector {
 }
 
 // SetupRules creates iptables chains and rules for all port mappings.
-// Idempotent: uses -C to check before -A.
+// Uses the mangle table with PREROUTING/POSTROUTING to capture ALL traffic
+// (local + forwarded) regardless of filter table rules.
+// Idempotent: uses -C to check before -I.
 func (c *IptablesCollector) SetupRules(mappings []PortMapping) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -56,26 +58,34 @@ func (c *IptablesCollector) SetupRules(mappings []PortMapping) {
 		chainOut := fmt.Sprintf("TRAFFIC_%s_OUT", m.UserID)
 
 		for _, cmd := range []string{"iptables", "ip6tables"} {
-			// Create chains (ignore error if exists)
-			exec.Command(cmd, "-N", chainIn).Run()
-			exec.Command(cmd, "-N", chainOut).Run()
+			// Create chains in the mangle table (ignore error if exists)
+			exec.Command(cmd, "-t", "mangle", "-N", chainIn).Run()
+			exec.Command(cmd, "-t", "mangle", "-N", chainOut).Run()
 
-			// INPUT rules: tcp + udp dport
+			// Add a RETURN rule inside each chain so packets are counted then returned.
+			if !mangleReturnRuleExists(cmd, chainIn) {
+				runMangle(cmd, "-A", chainIn, "-j", "RETURN")
+			}
+			if !mangleReturnRuleExists(cmd, chainOut) {
+				runMangle(cmd, "-A", chainOut, "-j", "RETURN")
+			}
+
+			// PREROUTING: counts all incoming packets (local + forwarded) by dport
 			for _, proto := range []string{"tcp", "udp"} {
-				if !chainRuleExists(cmd, "INPUT", proto, "--dport", portRange, chainIn) {
-					runIptables(cmd, "-A", "INPUT", "-p", proto, "--dport", portRange, "-j", chainIn)
+				if !mangleChainRuleExists(cmd, "PREROUTING", proto, "--dport", portRange, chainIn) {
+					runMangle(cmd, "-I", "PREROUTING", "-p", proto, "--dport", portRange, "-j", chainIn)
 				}
 			}
 
-			// OUTPUT rules: tcp + udp sport
+			// POSTROUTING: counts all outgoing packets (local + forwarded) by sport
 			for _, proto := range []string{"tcp", "udp"} {
-				if !chainRuleExists(cmd, "OUTPUT", proto, "--sport", portRange, chainOut) {
-					runIptables(cmd, "-A", "OUTPUT", "-p", proto, "--sport", portRange, "-j", chainOut)
+				if !mangleChainRuleExists(cmd, "POSTROUTING", proto, "--sport", portRange, chainOut) {
+					runMangle(cmd, "-I", "POSTROUTING", "-p", proto, "--sport", portRange, "-j", chainOut)
 				}
 			}
 		}
 
-		slog.Info("iptables rules set up", "user_id", m.UserID, "ports", portRange)
+		slog.Info("iptables mangle rules set up", "user_id", m.UserID, "ports", portRange)
 	}
 }
 
@@ -127,19 +137,29 @@ func (c *IptablesCollector) removeUserRules(m PortMapping) {
 	chainOut := fmt.Sprintf("TRAFFIC_%s_OUT", m.UserID)
 
 	for _, cmd := range []string{"iptables", "ip6tables"} {
-		// Remove references from INPUT/OUTPUT
+		// Remove references from mangle PREROUTING/POSTROUTING
+		for _, proto := range []string{"tcp", "udp"} {
+			exec.Command(cmd, "-t", "mangle", "-w", "-D", "PREROUTING", "-p", proto, "--dport", portRange, "-j", chainIn).Run()
+			exec.Command(cmd, "-t", "mangle", "-w", "-D", "POSTROUTING", "-p", proto, "--sport", portRange, "-j", chainOut).Run()
+		}
+		// Flush and delete chains from mangle table
+		exec.Command(cmd, "-t", "mangle", "-w", "-F", chainIn).Run()
+		exec.Command(cmd, "-t", "mangle", "-w", "-X", chainIn).Run()
+		exec.Command(cmd, "-t", "mangle", "-w", "-F", chainOut).Run()
+		exec.Command(cmd, "-t", "mangle", "-w", "-X", chainOut).Run()
+
+		// Also clean up legacy filter table rules if they exist
 		for _, proto := range []string{"tcp", "udp"} {
 			exec.Command(cmd, "-w", "-D", "INPUT", "-p", proto, "--dport", portRange, "-j", chainIn).Run()
 			exec.Command(cmd, "-w", "-D", "OUTPUT", "-p", proto, "--sport", portRange, "-j", chainOut).Run()
 		}
-		// Flush and delete chains
 		exec.Command(cmd, "-w", "-F", chainIn).Run()
 		exec.Command(cmd, "-w", "-X", chainIn).Run()
 		exec.Command(cmd, "-w", "-F", chainOut).Run()
 		exec.Command(cmd, "-w", "-X", chainOut).Run()
 	}
 
-	slog.Info("iptables rules removed", "user_id", m.UserID)
+	slog.Info("iptables mangle rules removed", "user_id", m.UserID)
 }
 
 // Collect reads iptables counters and computes deltas.
@@ -183,21 +203,19 @@ func (c *IptablesCollector) Collect() ([]TrafficSample, error) {
 		c.lastTx[m.UserID] = currentTx
 		c.mu.Unlock()
 
-		if deltaRx > 0 || deltaTx > 0 {
-			samples = append(samples, TrafficSample{
-				UserID:  m.UserID,
-				RxBytes: deltaRx,
-				TxBytes: deltaTx,
-			})
-		}
+		samples = append(samples, TrafficSample{
+			UserID:  m.UserID,
+			RxBytes: deltaRx,
+			TxBytes: deltaTx,
+		})
 	}
 
 	return samples, nil
 }
 
-// readChainBytes parses `iptables -L <chain> -n -v -x -w` and sums the bytes column.
+// readChainBytes parses `iptables -t mangle -L <chain> -n -v -x -w` and sums the bytes column.
 func readChainBytes(cmd, chain string) int64 {
-	out, err := exec.Command(cmd, "-L", chain, "-n", "-v", "-x", "-w").Output()
+	out, err := exec.Command(cmd, "-t", "mangle", "-L", chain, "-n", "-v", "-x", "-w").Output()
 	if err != nil {
 		return 0
 	}
@@ -223,15 +241,20 @@ func readChainBytes(cmd, chain string) int64 {
 	return total
 }
 
-func chainRuleExists(cmd, chain, proto, portFlag, portRange, target string) bool {
-	err := exec.Command(cmd, "-w", "-C", chain, "-p", proto, portFlag, portRange, "-j", target).Run()
+func mangleReturnRuleExists(cmd, chain string) bool {
+	err := exec.Command(cmd, "-t", "mangle", "-w", "-C", chain, "-j", "RETURN").Run()
 	return err == nil
 }
 
-func runIptables(cmd string, args ...string) {
-	allArgs := append([]string{"-w"}, args...)
+func mangleChainRuleExists(cmd, chain, proto, portFlag, portRange, target string) bool {
+	err := exec.Command(cmd, "-t", "mangle", "-w", "-C", chain, "-p", proto, portFlag, portRange, "-j", target).Run()
+	return err == nil
+}
+
+func runMangle(cmd string, args ...string) {
+	allArgs := append([]string{"-t", "mangle", "-w"}, args...)
 	if err := exec.Command(cmd, allArgs...).Run(); err != nil {
-		slog.Warn("iptables command failed", "cmd", cmd, "args", args, "error", err)
+		slog.Warn("iptables mangle command failed", "cmd", cmd, "args", args, "error", err)
 	}
 }
 

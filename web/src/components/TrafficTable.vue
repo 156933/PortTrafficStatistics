@@ -7,10 +7,10 @@ defineProps<{
 }>()
 
 const columns = [
-  { title: '日期', key: 'date' },
-  { title: '下载', key: 'rx_bytes', render: (row: any) => formatBytes(row.rx_bytes) },
-  { title: '上传', key: 'tx_bytes', render: (row: any) => formatBytes(row.tx_bytes) },
-  { title: '合计', key: 'total_bytes', render: (row: any) => formatBytes(row.total_bytes) },
+  { title: 'Date', key: 'date' },
+  { title: 'Download', key: 'rx_bytes', render: (row: any) => formatBytes(row.rx_bytes) },
+  { title: 'Upload', key: 'tx_bytes', render: (row: any) => formatBytes(row.tx_bytes) },
+  { title: 'Total', key: 'total_bytes', render: (row: any) => formatBytes(row.total_bytes) },
 ]
 </script>
 

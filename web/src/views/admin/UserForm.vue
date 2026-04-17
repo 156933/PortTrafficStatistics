@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NCard, NForm, NFormItem, NInput, NInputNumber, NSelect, NButton, useMessage } from 'naive-ui'
+import { NForm, NFormItem, NInput, NInputNumber, NSelect, NButton, useMessage } from 'naive-ui'
 import { getUser, createUser, updateUser } from '../../api/user'
 import { listHosts } from '../../api/host'
 import { gbToBytes, bytesToGB } from '../../utils/format'
@@ -13,7 +13,7 @@ const loading = ref(false)
 const hosts = ref<any[]>([])
 
 const isEdit = computed(() => !!route.params.id)
-const title = computed(() => isEdit.value ? '编辑用户' : '创建用户')
+const title = computed(() => isEdit.value ? 'Edit User' : 'New User')
 
 const form = ref({
   user_id: '',
@@ -26,7 +26,7 @@ const form = ref({
   note: '',
 })
 
-const resetDayOptions = Array.from({ length: 28 }, (_, i) => ({ label: `${i + 1} 号`, value: i + 1 }))
+const resetDayOptions = Array.from({ length: 28 }, (_, i) => ({ label: `Day ${i + 1}`, value: i + 1 }))
 
 const hostOptions = computed(() => hosts.value.map((h: any) => ({ label: `${h.name} (${h.host_id})`, value: h.host_id })))
 
@@ -55,13 +55,13 @@ async function loadUser() {
       note: u.note,
     }
   } catch (e) {
-    message.error('加载用户失败')
+    message.error('Failed to load user')
   }
 }
 
 async function handleSubmit() {
   if (!form.value.user_id || !form.value.name || !form.value.host_id) {
-    message.warning('请填写必填字段')
+    message.warning('Please fill in required fields')
     return
   }
   loading.value = true
@@ -78,14 +78,14 @@ async function handleSubmit() {
     }
     if (isEdit.value) {
       await updateUser(route.params.id as string, data)
-      message.success('更新成功')
+      message.success('Updated')
     } else {
       await createUser(data)
-      message.success('创建成功')
+      message.success('Created')
     }
     router.push('/admin/users')
   } catch (e: any) {
-    message.error(e.response?.data?.error || '操作失败')
+    message.error(e.response?.data?.error || 'Operation failed')
   } finally {
     loading.value = false
   }
@@ -98,36 +98,67 @@ onMounted(() => {
 </script>
 
 <template>
-  <n-card :title="title" style="max-width: 600px;">
-    <n-form label-placement="left" label-width="100">
-      <n-form-item label="User ID">
-        <n-input v-model:value="form.user_id" :disabled="isEdit" placeholder="如 user01" />
-      </n-form-item>
-      <n-form-item label="名称">
-        <n-input v-model:value="form.name" placeholder="用户显示名称" />
-      </n-form-item>
-      <n-form-item label="母机">
-        <n-select v-model:value="form.host_id" :options="hostOptions" placeholder="选择母机" />
-      </n-form-item>
-      <n-form-item label="起始端口">
-        <n-input-number v-model:value="form.port_start" :min="1" :max="65535" />
-      </n-form-item>
-      <n-form-item label="结束端口">
-        <n-input-number v-model:value="form.port_end" :min="1" :max="65535" />
-      </n-form-item>
-      <n-form-item label="流量上限 (GB)">
-        <n-input-number v-model:value="form.traffic_limit_gb" :min="0" :precision="2" />
-      </n-form-item>
-      <n-form-item label="重置日">
-        <n-select v-model:value="form.reset_day" :options="resetDayOptions" />
-      </n-form-item>
-      <n-form-item label="备注">
-        <n-input v-model:value="form.note" type="textarea" :rows="2" />
-      </n-form-item>
-      <n-form-item>
-        <n-button type="primary" :loading="loading" @click="handleSubmit">{{ isEdit ? '保存' : '创建' }}</n-button>
-        <n-button style="margin-left: 12px;" @click="router.back()">取消</n-button>
-      </n-form-item>
-    </n-form>
-  </n-card>
+  <div>
+    <div class="page-header">
+      <div class="page-title">{{ title }}</div>
+    </div>
+
+    <div class="form-card">
+      <n-form label-placement="left" label-width="120" style="max-width: 520px;">
+        <n-form-item label="User ID">
+          <n-input v-model:value="form.user_id" :disabled="isEdit" placeholder="e.g. user01" />
+        </n-form-item>
+        <n-form-item label="Name">
+          <n-input v-model:value="form.name" placeholder="Display name" />
+        </n-form-item>
+        <n-form-item label="Host">
+          <n-select v-model:value="form.host_id" :options="hostOptions" placeholder="Select host" />
+        </n-form-item>
+        <n-form-item label="Port Start">
+          <n-input-number v-model:value="form.port_start" :min="1" :max="65535" style="width: 100%;" />
+        </n-form-item>
+        <n-form-item label="Port End">
+          <n-input-number v-model:value="form.port_end" :min="1" :max="65535" style="width: 100%;" />
+        </n-form-item>
+        <n-form-item label="Traffic Limit (GB)">
+          <n-input-number v-model:value="form.traffic_limit_gb" :min="0" :precision="2" style="width: 100%;" />
+        </n-form-item>
+        <n-form-item label="Reset Day">
+          <n-select v-model:value="form.reset_day" :options="resetDayOptions" />
+        </n-form-item>
+        <n-form-item label="Note">
+          <n-input v-model:value="form.note" type="textarea" :rows="3" />
+        </n-form-item>
+        <n-form-item label=" ">
+          <n-space>
+            <n-button type="primary" :loading="loading" @click="handleSubmit">
+              {{ isEdit ? 'Save' : 'Create' }}
+            </n-button>
+            <n-button secondary @click="router.back()">Cancel</n-button>
+          </n-space>
+        </n-form-item>
+      </n-form>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.02em;
+}
+
+.form-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+</style>

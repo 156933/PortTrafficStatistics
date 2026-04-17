@@ -67,10 +67,6 @@ func main() {
 			slog.Error("collect failed", "error", err)
 			return
 		}
-		if len(samples) == 0 {
-			slog.Info("no traffic to report")
-			return
-		}
 		slog.Info("collected traffic", "samples", len(samples))
 
 		if err := reporter.Report(samples); err != nil {

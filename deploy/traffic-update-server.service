@@ -1,0 +1,12 @@
+[Unit]
+Description=Traffic Monitor Server Auto Update
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=BINARY=server
+Environment=SERVICE=traffic-server
+Environment=REPO=156933/PortTrafficStatistics
+Environment=INSTALL_DIR=/opt/traffic-monitor
+ExecStart=/opt/traffic-monitor/update.sh -y

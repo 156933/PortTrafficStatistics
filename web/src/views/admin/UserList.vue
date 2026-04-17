@@ -4,8 +4,6 @@ import { useRouter } from 'vue-router'
 import { NDataTable, NButton, NSpace, NInput, NSelect, NPopconfirm, NTag, useMessage } from 'naive-ui'
 import { listUsers, deleteUser, suspendUser, resumeUser } from '../../api/user'
 import { exportTrafficCSV, downloadBlob } from '../../api/export'
-import { formatBytes } from '../../utils/format'
-import UsageBar from '../../components/UsageBar.vue'
 
 const router = useRouter()
 const message = useMessage()
@@ -18,28 +16,38 @@ const search = ref('')
 const statusFilter = ref<string | null>(null)
 
 const statusOptions = [
-  { label: '全部', value: '' },
-  { label: '正常', value: 'active' },
-  { label: '已暂停', value: 'suspended' },
+  { label: 'All', value: '' },
+  { label: 'Active', value: 'active' },
+  { label: 'Suspended', value: 'suspended' },
 ]
 
 const columns = [
-  { title: 'User ID', key: 'user_id', width: 100 },
-  { title: '名称', key: 'name', width: 100 },
-  { title: '母机', key: 'host_id', width: 120 },
-  { title: '端口', key: 'port', width: 120, render: (row: any) => `${row.port_start}-${row.port_end}` },
+  { title: 'User ID', key: 'user_id', width: 120, ellipsis: { tooltip: true } },
+  { title: 'Name', key: 'name', width: 120, ellipsis: { tooltip: true } },
+  { title: 'Host', key: 'host_id', width: 120, ellipsis: { tooltip: true } },
+  { title: 'Port Range', key: 'port', width: 130, render: (row: any) => `${row.port_start} - ${row.port_end}` },
   {
-    title: '状态', key: 'status', width: 80,
-    render: (row: any) => h(NTag, { type: row.status === 'active' ? 'success' : row.status === 'suspended' ? 'warning' : 'default', size: 'small' }, () => row.status === 'active' ? '正常' : row.status === 'suspended' ? '已暂停' : row.status),
+    title: 'Status', key: 'status', width: 100,
+    render: (row: any) => h(NTag, {
+      type: row.status === 'active' ? 'success' : row.status === 'suspended' ? 'warning' : 'default',
+      size: 'small',
+      round: true,
+    }, () => row.status === 'active' ? 'Active' : row.status === 'suspended' ? 'Suspended' : row.status),
   },
   {
-    title: '操作', key: 'actions', width: 240,
-    render: (row: any) => h(NSpace, null, () => [
-      h(NButton, { size: 'small', onClick: () => router.push(`/admin/users/${row.user_id}/edit`) }, () => '编辑'),
+    title: 'Actions', key: 'actions', width: 220, fixed: 'right' as const,
+    render: (row: any) => h(NSpace, { size: 8 }, () => [
+      h(NButton, { size: 'small', secondary: true, onClick: () => router.push(`/admin/users/${row.user_id}/edit`) }, () => 'Edit'),
       row.status === 'active'
-        ? h(NPopconfirm, { onPositiveClick: () => handleSuspend(row.user_id) }, { default: () => '确认暂停？', trigger: () => h(NButton, { size: 'small', type: 'warning' }, () => '暂停') })
-        : h(NButton, { size: 'small', type: 'info', onClick: () => handleResume(row.user_id) }, () => '恢复'),
-      h(NPopconfirm, { onPositiveClick: () => handleDelete(row.user_id) }, { default: () => '确认删除？', trigger: () => h(NButton, { size: 'small', type: 'error' }, () => '删除') }),
+        ? h(NPopconfirm, { onPositiveClick: () => handleSuspend(row.user_id) }, {
+            default: () => 'Confirm suspend?',
+            trigger: () => h(NButton, { size: 'small', secondary: true, type: 'warning' }, () => 'Suspend'),
+          })
+        : h(NButton, { size: 'small', secondary: true, type: 'info', onClick: () => handleResume(row.user_id) }, () => 'Resume'),
+      h(NPopconfirm, { onPositiveClick: () => handleDelete(row.user_id) }, {
+        default: () => 'Confirm delete?',
+        trigger: () => h(NButton, { size: 'small', secondary: true, type: 'error' }, () => 'Delete'),
+      }),
     ]),
   },
 ]
@@ -60,30 +68,30 @@ async function fetchData() {
 async function handleDelete(userId: string) {
   try {
     await deleteUser(userId)
-    message.success('已删除')
+    message.success('Deleted')
     fetchData()
   } catch (e) {
-    message.error('删除失败')
+    message.error('Delete failed')
   }
 }
 
 async function handleSuspend(userId: string) {
   try {
     await suspendUser(userId)
-    message.success('已暂停')
+    message.success('Suspended')
     fetchData()
   } catch (e) {
-    message.error('操作失败')
+    message.error('Operation failed')
   }
 }
 
 async function handleResume(userId: string) {
   try {
     await resumeUser(userId)
-    message.success('已恢复')
+    message.success('Resumed')
     fetchData()
   } catch (e) {
-    message.error('操作失败')
+    message.error('Operation failed')
   }
 }
 
@@ -92,7 +100,7 @@ async function handleExport() {
     const res = await exportTrafficCSV()
     downloadBlob(res.data, 'traffic_export.csv')
   } catch (e) {
-    message.error('导出失败')
+    message.error('Export failed')
   }
 }
 
@@ -106,23 +114,65 @@ onMounted(fetchData)
 
 <template>
   <div>
-    <n-space justify="space-between" style="margin-bottom: 16px;">
+    <div class="page-header">
+      <div class="page-title">Users</div>
       <n-space>
-        <n-input v-model:value="search" placeholder="搜索用户..." clearable style="width: 200px;" @clear="fetchData" @keydown.enter="fetchData" />
-        <n-select v-model:value="statusFilter" :options="statusOptions" style="width: 120px;" @update:value="fetchData" />
+        <n-button type="primary" @click="router.push('/admin/users/create')">
+          <template #icon>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </template>
+          New User
+        </n-button>
+        <n-button secondary @click="handleExport">Export CSV</n-button>
       </n-space>
-      <n-space>
-        <n-button type="primary" @click="router.push('/admin/users/create')">创建用户</n-button>
-        <n-button @click="handleExport">导出 CSV</n-button>
-      </n-space>
-    </n-space>
+    </div>
 
-    <n-data-table
-      :columns="columns"
-      :data="data"
-      :loading="loading"
-      :pagination="{ page: page, pageSize: size, itemCount: total, onChange: handlePageChange }"
-      :bordered="false"
-    />
+    <div class="filter-bar">
+      <n-input v-model:value="search" placeholder="Search users..." clearable style="width: 240px;" @clear="fetchData" @keydown.enter="fetchData" />
+      <n-select v-model:value="statusFilter" :options="statusOptions" style="width: 140px;" @update:value="fetchData" />
+    </div>
+
+    <div class="table-card">
+      <n-data-table
+        :columns="columns"
+        :data="data"
+        :loading="loading"
+        :pagination="{ page: page, pageSize: size, itemCount: total, onChange: handlePageChange }"
+        :bordered="false"
+        :scroll-x="800"
+      />
+    </div>
   </div>
 </template>
+
+<style scoped>
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.02em;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.table-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+</style>

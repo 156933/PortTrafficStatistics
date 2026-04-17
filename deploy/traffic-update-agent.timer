@@ -1,0 +1,10 @@
+[Unit]
+Description=Run agent auto-update every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Unit=traffic-update-agent.service
+
+[Install]
+WantedBy=timers.target

@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -24,7 +25,22 @@ jobs:
           go-version: 'stable'
           cache: true
 
-      - name: Build server and agent
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build frontend
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+      - name: Prepare embed dir
+        run: |
+          mkdir -p cmd/server/web
+          cp -r web/dist cmd/server/web/dist
+
+      - name: Build binaries
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -32,9 +48,9 @@ jobs:
         run: |
           mkdir -p dist
           go build -trimpath -ldflags="-s -w" \
-            -o dist/server-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/server
-          go build -trimpath -ldflags="-s -w" \
             -o dist/agent-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/agent
+          go build -trimpath -ldflags="-s -w" \
+            -o dist/server-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/server
 
       - uses: actions/upload-artifact@v4
         with:

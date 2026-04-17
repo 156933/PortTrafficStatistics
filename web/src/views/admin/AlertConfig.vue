@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, h, onMounted } from 'vue'
-import { NDataTable, NButton, NSpace, NModal, NForm, NFormItem, NInput, NInputNumber, NSelect, NSwitch, NPopconfirm, NTag, useMessage } from 'naive-ui'
+import { NDataTable, NButton, NSpace, NModal, NForm, NFormItem, NInput, NInputNumber, NSelect, NPopconfirm, NTag, useMessage } from 'naive-ui'
 import { listAlertRules, createAlertRule, updateAlertRule, deleteAlertRule } from '../../api/alert'
 import { formatBytes, gbToBytes } from '../../utils/format'
 
@@ -11,30 +11,39 @@ const showForm = ref(false)
 const form = ref({ user_id: '', type: 'traffic_limit', threshold_gb: 100, notify_method: 'log', webhook_url: '' })
 
 const typeOptions = [
-  { label: '流量超限', value: 'traffic_limit' },
-  { label: '母机离线', value: 'host_offline' },
+  { label: 'Traffic Limit', value: 'traffic_limit' },
+  { label: 'Host Offline', value: 'host_offline' },
 ]
 
 const notifyOptions = [
-  { label: '仅记录', value: 'log' },
+  { label: 'Log Only', value: 'log' },
   { label: 'Webhook', value: 'webhook' },
 ]
 
 const columns = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '用户', key: 'user_id', width: 100, render: (row: any) => row.user_id || '全局' },
-  { title: '类型', key: 'type', width: 100, render: (row: any) => row.type === 'traffic_limit' ? '流量超限' : '母机离线' },
-  { title: '阈值', key: 'threshold_bytes', width: 120, render: (row: any) => row.threshold_bytes ? formatBytes(row.threshold_bytes) : '-' },
-  { title: '通知', key: 'notify_method', width: 100 },
+  { title: 'User', key: 'user_id', width: 120, render: (row: any) => row.user_id || 'Global' },
   {
-    title: '启用', key: 'enabled', width: 80,
-    render: (row: any) => h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small' }, () => row.enabled ? '启用' : '禁用'),
+    title: 'Type', key: 'type', width: 120,
+    render: (row: any) => h(NTag, { size: 'small', round: true, bordered: false, type: row.type === 'traffic_limit' ? 'warning' : 'error' },
+      () => row.type === 'traffic_limit' ? 'Traffic Limit' : 'Host Offline'),
+  },
+  { title: 'Threshold', key: 'threshold_bytes', width: 120, render: (row: any) => row.threshold_bytes ? formatBytes(row.threshold_bytes) : '-' },
+  { title: 'Notify', key: 'notify_method', width: 100 },
+  {
+    title: 'Enabled', key: 'enabled', width: 80,
+    render: (row: any) => h('div', {
+      style: `width:8px;height:8px;border-radius:50%;background:${row.enabled ? '#10b981' : '#94a3b8'};box-shadow:0 0 6px ${row.enabled ? 'rgba(16,185,129,0.4)' : 'none'}`,
+    }),
   },
   {
-    title: '操作', key: 'actions', width: 160,
-    render: (row: any) => h(NSpace, null, () => [
-      h(NButton, { size: 'small', onClick: () => toggleEnabled(row) }, () => row.enabled ? '禁用' : '启用'),
-      h(NPopconfirm, { onPositiveClick: () => handleDelete(row.id) }, { default: () => '确认删除？', trigger: () => h(NButton, { size: 'small', type: 'error' }, () => '删除') }),
+    title: 'Actions', key: 'actions', width: 160,
+    render: (row: any) => h(NSpace, { size: 8 }, () => [
+      h(NButton, { size: 'small', secondary: true, onClick: () => toggleEnabled(row) }, () => row.enabled ? 'Disable' : 'Enable'),
+      h(NPopconfirm, { onPositiveClick: () => handleDelete(row.id) }, {
+        default: () => 'Confirm delete?',
+        trigger: () => h(NButton, { size: 'small', secondary: true, type: 'error' }, () => 'Delete'),
+      }),
     ]),
   },
 ]
@@ -60,12 +69,12 @@ async function handleCreate() {
       notify_method: form.value.notify_method,
       webhook_url: form.value.webhook_url,
     })
-    message.success('创建成功')
+    message.success('Created')
     showForm.value = false
     form.value = { user_id: '', type: 'traffic_limit', threshold_gb: 100, notify_method: 'log', webhook_url: '' }
     fetchData()
   } catch (e: any) {
-    message.error(e.response?.data?.error || '创建失败')
+    message.error(e.response?.data?.error || 'Create failed')
   }
 }
 
@@ -74,17 +83,17 @@ async function toggleEnabled(row: any) {
     await updateAlertRule(row.id, { enabled: !row.enabled })
     fetchData()
   } catch (e) {
-    message.error('操作失败')
+    message.error('Operation failed')
   }
 }
 
 async function handleDelete(id: number) {
   try {
     await deleteAlertRule(id)
-    message.success('已删除')
+    message.success('Deleted')
     fetchData()
   } catch (e) {
-    message.error('删除失败')
+    message.error('Delete failed')
   }
 }
 
@@ -93,34 +102,67 @@ onMounted(fetchData)
 
 <template>
   <div>
-    <n-space justify="space-between" style="margin-bottom: 16px;">
-      <h3 style="margin: 0;">告警规则</h3>
-      <n-button type="primary" @click="showForm = true">添加规则</n-button>
-    </n-space>
+    <div class="page-header">
+      <div class="page-title">Alert Rules</div>
+      <n-button type="primary" @click="showForm = true">
+        <template #icon>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </template>
+        Add Rule
+      </n-button>
+    </div>
 
-    <n-data-table :columns="columns" :data="data" :loading="loading" :bordered="false" />
+    <div class="table-card">
+      <n-data-table :columns="columns" :data="data" :loading="loading" :bordered="false" />
+    </div>
 
-    <n-modal v-model:show="showForm" preset="card" title="添加告警规则" style="max-width: 450px;">
-      <n-form label-placement="left" label-width="80">
-        <n-form-item label="用户">
-          <n-input v-model:value="form.user_id" placeholder="留空为全局" />
+    <n-modal v-model:show="showForm" preset="card" title="New Alert Rule" style="max-width: 480px; border-radius: 20px;">
+      <n-form label-placement="left" label-width="100">
+        <n-form-item label="User">
+          <n-input v-model:value="form.user_id" placeholder="Leave empty for global" />
         </n-form-item>
-        <n-form-item label="类型">
+        <n-form-item label="Type">
           <n-select v-model:value="form.type" :options="typeOptions" />
         </n-form-item>
-        <n-form-item label="阈值 (GB)">
-          <n-input-number v-model:value="form.threshold_gb" :min="0" :precision="2" />
+        <n-form-item label="Threshold (GB)">
+          <n-input-number v-model:value="form.threshold_gb" :min="0" :precision="2" style="width: 100%;" />
         </n-form-item>
-        <n-form-item label="通知方式">
+        <n-form-item label="Notify">
           <n-select v-model:value="form.notify_method" :options="notifyOptions" />
         </n-form-item>
-        <n-form-item v-if="form.notify_method === 'webhook'" label="Webhook">
+        <n-form-item v-if="form.notify_method === 'webhook'" label="Webhook URL">
           <n-input v-model:value="form.webhook_url" placeholder="https://..." />
         </n-form-item>
       </n-form>
       <template #action>
-        <n-button type="primary" @click="handleCreate">创建</n-button>
+        <n-button type="primary" @click="handleCreate">Create</n-button>
       </template>
     </n-modal>
   </div>
 </template>
+
+<style scoped>
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.02em;
+}
+
+.table-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+</style>
