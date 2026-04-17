@@ -15,7 +15,7 @@ import (
 	"lxc-traffic-monitor/internal/server"
 )
 
-//go:embed web/dist
+//go:embed all:web/dist
 var embeddedFS embed.FS
 
 func main() {
