@@ -35,6 +35,11 @@ jobs:
           npm ci
           npm run build
 
+      - name: Copy frontend into server embed path
+        run: |
+          mkdir -p cmd/server/web
+          cp -r web/dist cmd/server/web/dist
+
       - name: Build binaries
         env:
           GOOS: ${{ matrix.goos }}

@@ -1,6 +1,8 @@
-# Binaries
-agent
-server
+# Binaries (built by Makefile / CI). Patterns are anchored to top level
+# and `bin/` so they don't accidentally swallow `cmd/agent`, `internal/server`,
+# etc. — that mistake silently broke every previous release.
+/agent
+/server
 bin/
 *.exe
 
